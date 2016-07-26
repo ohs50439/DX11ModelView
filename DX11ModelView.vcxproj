@@ -10,18 +10,20 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-   <ItemGroup>
+  <ItemGroup>
     <ClCompile Include="src\Device\DirextXDevice.cpp" />
     <ClCompile Include="src\Device\WindowDevice.cpp" />
     <ClCompile Include="src\Input\input.cpp" />
     <ClCompile Include="src\Input\Xbox360.cpp" />
     <ClCompile Include="src\Input\xinpututil.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Resource\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Device\DirectXDevice.h" />
     <ClInclude Include="Include\Device\WindowDevice.h" />
     <ClInclude Include="include\Macro.h" />
+    <ClInclude Include="Include\Resource\Texture.h" />
     <ClInclude Include="include\Vertex.h" />
     <ClInclude Include="src\Input\input.h" />
     <ClInclude Include="src\Input\Xbox360.h" />
@@ -46,7 +48,6 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>

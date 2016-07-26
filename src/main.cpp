@@ -7,8 +7,8 @@
 #include <./Device/WindowDevice.h>
 #include <./Device/DirectXDevice.h>
 #include <./Vertex.h>
+#include <./Resource/Texture.h>
 
-#define SAFE_RELEASE(v) if(v) {v->Release(); v = nullptr;}
 
 // Shaderに送るカメラ情報
 struct ConstantBuffer{
@@ -28,11 +28,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	device.Init(window.getHandle(), window.getWidth(), window.getHeight(), window.getWindowMode());
 
 	// 頂点の生成
-	Vertex4 vertex[4] = {
-		{ 500.f, 500.f, 1.0f },
-		{ -500.f, 500.f, 1.0f },
-		{ 500.f, -500.f, 1.0f },
-		{ -500.f, -500.f, 1.0f },
+	Vertex4UV vertex[4] = {
+		{  500.f,  500.f, 1.0f,0.0f, 1.0f, 0.0f },
+		{ -500.f,  500.f, 1.0f,0.0f, 0.0f, 0.0f },
+		{  500.f, -500.f, 1.0f,0.0f, 1.0f, 1.0f },
+		{ -500.f, -500.f, 1.0f,0.0f, 0.0f, 1.0f },
 	};
 
 	// VetexBufferの格納先を宣言
@@ -55,7 +55,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	device.getContext()->Unmap(vertexbuffer, NULL); // ロック解除
 
 	// パイプラインに頂点バッファのセット
-	UINT stride = sizeof(Vertex4); // 頂点のサイズ
+	UINT stride = sizeof(Vertex4UV); // 頂点のサイズ
 	UINT offset = 0;			   // ずれの調整
 	device.getContext()->IASetVertexBuffers(0, 1, &vertexbuffer, &stride, &offset);
 
@@ -69,7 +69,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	D3DX11CompileFromFile(TEXT("./Shader/VS.hlsl"), 0, 0, "main", "vs_5_0", 0, 0, 0, &vsblob, 0, 0);
 	D3DX11CompileFromFile(TEXT("./Shader/PS.hlsl"), 0, 0, "main", "ps_5_0", 0, 0, 0, &psblob, 0, 0);
 	// blobを_bufに格納
-	device.getDevice()->CreateVertexShader(vsblob->GetBufferPointer(), vsblob->GetBufferSize(), nullptr, &vs_buf);
+	device.getDevice()->CreateVertexShader(vsblob->GetBufferPointer(), vsblob->GetBufferSize(), nullptr ,&vs_buf);
 	device.getDevice()->CreatePixelShader(psblob->GetBufferPointer(), psblob->GetBufferSize(), nullptr, &ps_buf);
 	// Shagerの設定
 	device.getContext()->VSSetShader(vs_buf, nullptr, 0);
@@ -77,7 +77,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 	//　インプットレイアウトを使うために必要なもの 
 	D3D11_INPUT_ELEMENT_DESC element[] = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },// 位置情報
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 } // UV情報 
 	};
 	ID3D11InputLayout *inputlayout;
 	device.getDevice()->CreateInputLayout(element, ARRAYSIZE(element), vsblob->GetBufferPointer(), vsblob->GetBufferSize(), &inputlayout); // 格納
@@ -129,6 +130,17 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	device.getContext()->UpdateSubresource(constantbuffer, 0, NULL, &mtx, 0, 0);
 	// Bufferをパイプラインにセット
 	device.getContext()->VSSetConstantBuffers(0, 1, &constantbuffer);
+
+	// テクスチャの読み込み
+	Texture2D tex,tex2;
+	tex.LoadFile("./Resource/Lenna.png");
+	tex2.LoadFile("./Resource/lenna_normal.png");
+	ID3D11ShaderResourceView *srv[] = {
+		tex.getSRV(),
+		tex2.getSRV()
+	};
+	device.getContext()->PSSetShaderResources(0, 2, srv);
+
 
 	int ret = 0;
 	while (ret != WM_QUIT){

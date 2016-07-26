@@ -13,48 +13,66 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ソース ファイル\Device">
+      <UniqueIdentifier>{0dbc04b2-8409-4436-a7cd-ed91419fb3b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Device">
+      <UniqueIdentifier>{ee683df7-0300-4203-814c-c83c19a72331}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Resource">
+      <UniqueIdentifier>{981c18b7-49dc-41de-b216-2440431cdeb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Resource">
+      <UniqueIdentifier>{cdf7619a-293a-4490-885f-eaf102a4ceb1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
-   <ItemGroup>
-    <ClCompile Include="src\main.cpp">
-      <Filter>ソース ファイル</Filter>
+  <ItemGroup>
+    <ClCompile Include="src\Device\DirextXDevice.cpp">
+      <Filter>ソース ファイル\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Input\input.cpp">
+      <Filter>ソース ファイル\Device</Filter>
     </ClCompile>
     <ClCompile Include="src\Device\WindowDevice.cpp">
       <Filter>ソース ファイル\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\Device\DirextXDevice.cpp">
+    <ClCompile Include="src\Input\Xbox360.cpp">
       <Filter>ソース ファイル\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\Input\Xbox360.cpp">
-      <Filter>ソース ファイル\Input\Xbox360</Filter>
-    </ClCompile>
     <ClCompile Include="src\Input\xinpututil.cpp">
-      <Filter>ソース ファイル\Input\Xbox360</Filter>
+      <Filter>ソース ファイル\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\Input\input.cpp">
-      <Filter>ソース ファイル\Input\KeyBoard</Filter>
+    <ClCompile Include="src\main.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Resource\Texture.cpp">
+      <Filter>ソース ファイル\Resource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Input\input.h">
+      <Filter>ヘッダー ファイル\Device</Filter>
+    </ClInclude>
     <ClInclude Include="Include\Device\WindowDevice.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Input\Xbox360.h">
+      <Filter>ヘッダー ファイル\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Input\xinpututil.h">
+      <Filter>ヘッダー ファイル\Device</Filter>
     </ClInclude>
     <ClInclude Include="Include\Device\DirectXDevice.h">
       <Filter>ヘッダー ファイル\Device</Filter>
     </ClInclude>
+    <ClInclude Include="include\Vertex.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="include\Macro.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\Input\xinpututil.h">
-      <Filter>ソース ファイル\Input\Xbox360</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Input\Xbox360.h">
-      <Filter>ソース ファイル\Input\Xbox360</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Input\input.h">
-      <Filter>ソース ファイル\Input\KeyBoard</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Vertex.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="Include\Resource\Texture.h">
+      <Filter>ヘッダー ファイル\Resource</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
