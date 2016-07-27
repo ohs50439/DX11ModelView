@@ -31,6 +31,12 @@
     <Filter Include="ヘッダー ファイル\GUI">
       <UniqueIdentifier>{51e4d285-737c-4677-8be0-9c88e54d6e52}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Graphics">
+      <UniqueIdentifier>{750163c0-0e27-4dd6-b470-d4b2f8ce26ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Graphics">
+      <UniqueIdentifier>{409f62cb-a936-4e25-bdcf-087d13566f61}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Device\DirextXDevice.cpp">
@@ -65,6 +71,12 @@
     </ClCompile>
     <ClCompile Include="src\GUI\imgui_impl_dx11.cpp">
       <Filter>ソース ファイル\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graphics\GraphicsPipeLine.cpp">
+      <Filter>ソース ファイル\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graphics\GraphicStatus.cpp">
+      <Filter>ソース ファイル\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -112,6 +124,12 @@
     </ClInclude>
     <ClInclude Include="Include\GUI\imgui_internal.h">
       <Filter>ヘッダー ファイル\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Graphics\GraphicsPipeLine.h">
+      <Filter>ヘッダー ファイル\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Graphics\GraphicStatus.h">
+      <Filter>ヘッダー ファイル\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
