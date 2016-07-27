@@ -1,7 +1,11 @@
 #include <./Device/WindowDevice.h>
+extern LRESULT ImGui_ImplDX11_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //後から修正(各Windowデバイスごとにイベント処理できるように変更)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (ImGui_ImplDX11_WndProcHandler(hWnd, uMsg, wParam, lParam))
+		return true;
+
 	switch (uMsg) {
 	case WM_CREATE:
 		break;

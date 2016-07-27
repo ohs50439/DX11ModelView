@@ -13,6 +13,10 @@
   <ItemGroup>
     <ClCompile Include="src\Device\DirextXDevice.cpp" />
     <ClCompile Include="src\Device\WindowDevice.cpp" />
+    <ClCompile Include="src\GUI\imgui.cpp" />
+    <ClCompile Include="src\GUI\imgui_demo.cpp" />
+    <ClCompile Include="src\GUI\imgui_draw.cpp" />
+    <ClCompile Include="src\GUI\imgui_impl_dx11.cpp" />
     <ClCompile Include="src\Input\input.cpp" />
     <ClCompile Include="src\Input\Xbox360.cpp" />
     <ClCompile Include="src\Input\xinpututil.cpp" />
@@ -22,6 +26,13 @@
   <ItemGroup>
     <ClInclude Include="Include\Device\DirectXDevice.h" />
     <ClInclude Include="Include\Device\WindowDevice.h" />
+    <ClInclude Include="Include\GUI\imconfig.h" />
+    <ClInclude Include="Include\GUI\imgui.h" />
+    <ClInclude Include="Include\GUI\imgui_impl_dx11.h" />
+    <ClInclude Include="Include\GUI\imgui_internal.h" />
+    <ClInclude Include="Include\GUI\stb_rect_pack.h" />
+    <ClInclude Include="Include\GUI\stb_textedit.h" />
+    <ClInclude Include="Include\GUI\stb_truetype.h" />
     <ClInclude Include="include\Macro.h" />
     <ClInclude Include="Include\Resource\Texture.h" />
     <ClInclude Include="include\Vertex.h" />

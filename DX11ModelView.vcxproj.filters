@@ -25,6 +25,12 @@
     <Filter Include="ヘッダー ファイル\Resource">
       <UniqueIdentifier>{cdf7619a-293a-4490-885f-eaf102a4ceb1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\GUI">
+      <UniqueIdentifier>{b8e9a039-79bd-4e4d-84a6-2d3aaa8ae1f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\GUI">
+      <UniqueIdentifier>{7cb90206-6e92-4dc1-92d5-ec39081ea0b2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Device\DirextXDevice.cpp">
@@ -47,6 +53,18 @@
     </ClCompile>
     <ClCompile Include="src\Resource\Texture.cpp">
       <Filter>ソース ファイル\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GUI\imgui.cpp">
+      <Filter>ソース ファイル\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GUI\imgui_demo.cpp">
+      <Filter>ソース ファイル\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GUI\imgui_draw.cpp">
+      <Filter>ソース ファイル\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GUI\imgui_impl_dx11.cpp">
+      <Filter>ソース ファイル\GUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +91,27 @@
     </ClInclude>
     <ClInclude Include="Include\Resource\Texture.h">
       <Filter>ヘッダー ファイル\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GUI\imconfig.h">
+      <Filter>ヘッダー ファイル\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GUI\imgui.h">
+      <Filter>ヘッダー ファイル\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GUI\imgui_impl_dx11.h">
+      <Filter>ヘッダー ファイル\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GUI\stb_rect_pack.h">
+      <Filter>ヘッダー ファイル\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GUI\stb_textedit.h">
+      <Filter>ヘッダー ファイル\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GUI\stb_truetype.h">
+      <Filter>ヘッダー ファイル\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\GUI\imgui_internal.h">
+      <Filter>ヘッダー ファイル\GUI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
