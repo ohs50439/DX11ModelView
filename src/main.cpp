@@ -1,5 +1,4 @@
-
-
+#pragma warning(disable:4005)
 #include <Windows.h>
 #include <xnamath.h>
 #include <D3DX11.h>
@@ -8,10 +7,12 @@
 #include <./Device/DirectXDevice.h>
 #include <./Vertex.h>
 #include <./Resource/Texture.h>
-
+#include <./GUI/imgui.h>
+#include <./GUI/imgui_internal.h>
+#include <./GUI/imgui_impl_dx11.h>
 
 // Shaderに送るカメラ情報
-struct ConstantBuffer{
+struct ConstantBuffer {
 	XMMATRIX mWorld;		//ワールド変換行列
 	XMMATRIX mView;			//ビュー変換行列
 	XMMATRIX mProjection;	//透視投影変換行列
@@ -26,17 +27,25 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	DX11Device &device = DX11Device::getInstance();
 	window.Init(hInstance, nCmdShow, TEXT("test window"), 1280, 720, true);
 	device.Init(window.getHandle(), window.getWidth(), window.getHeight(), window.getWindowMode());
+	ImGui_ImplDX11_Init(window.getHandle(), device.getDevice(), device.getContext());
 
 	// 頂点の生成
 	Vertex4UV vertex[4] = {
-		{  500.f,  500.f, 1.0f,0.0f, 1.0f, 0.0f },
-		{ -500.f,  500.f, 1.0f,0.0f, 0.0f, 0.0f },
-		{  500.f, -500.f, 1.0f,0.0f, 1.0f, 1.0f },
-		{ -500.f, -500.f, 1.0f,0.0f, 0.0f, 1.0f },
+		{  100.0f,  100.0f, 1.0f,1.0f, 1.0f, 0.0f },
+		{ -100.0f,  100.0f, 1.0f,1.0f, 0.0f, 0.0f },
+		{  100.0f, -100.0f, 1.0f,1.0f, 1.0f, 1.0f },
+		{ -100.0f, -100.0f, 1.0f,1.0f, 0.0f, 1.0f },
+	};
+	Vertex4UV finalvertex[4] = {
+		{  1.0f,  1.0f, 1.0f,1.0f, 1.0f, 0.0f },
+		{ -1.0f,  1.0f, 1.0f,1.0f, 0.0f, 0.0f },
+		{  1.0f, -1.0f, 1.0f,1.0f, 1.0f, 1.0f },
+		{ -1.0f, -1.0f, 1.0f,1.0f, 0.0f, 1.0f },
 	};
 
 	// VetexBufferの格納先を宣言
-	ID3D11Buffer *vertexbuffer = nullptr; 
+	ID3D11Buffer *vertexbuffer = nullptr;
+	ID3D11Buffer *finalvertexbuffer = nullptr;
 
 	D3D11_BUFFER_DESC bd; // 生成方法(バッファー リソース)
 	ZeroMemory(&bd, sizeof(bd)); // 中身をゼロクリア
@@ -48,33 +57,47 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	// Bufferの生成
 	device.getDevice()->CreateBuffer(&bd, nullptr, &vertexbuffer);
 
+	ZeroMemory(&bd, sizeof(bd)); // 中身をゼロクリア
+	// Bufferの生成方法の格納
+	bd.Usage = D3D11_USAGE_DYNAMIC; // バッファーで想定されている読み込みおよび書き込みの方法を識別
+	bd.ByteWidth = sizeof(finalvertex);  // バッファーのサイズ(バイト単位)
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // なんのバッファですか？
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // CPUからは書き込みのみ行います
+	// Bufferの生成
+	device.getDevice()->CreateBuffer(&bd, nullptr, &finalvertexbuffer);
+
 	//　頂点情報を格納していく
 	D3D11_MAPPED_SUBRESOURCE ms; // Bufferを格納する為にとりあえずロックをかけないといけない。どこまでロックをかける？サブリソース データにアクセスできるようにする
 	device.getContext()->Map(vertexbuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms); // アクセス先ms
 	memcpy(ms.pData, vertex, sizeof(vertex));// pData = vetexコピー　書き込み
 	device.getContext()->Unmap(vertexbuffer, NULL); // ロック解除
 
-	// パイプラインに頂点バッファのセット
-	UINT stride = sizeof(Vertex4UV); // 頂点のサイズ
-	UINT offset = 0;			   // ずれの調整
-	device.getContext()->IASetVertexBuffers(0, 1, &vertexbuffer, &stride, &offset);
+	device.getContext()->Map(finalvertexbuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms); // アクセス先ms
+	memcpy(ms.pData, finalvertex, sizeof(finalvertex));// pData = vetexコピー　書き込み
+	device.getContext()->Unmap(finalvertexbuffer, NULL); // ロック解除
 
 	// シェーダーの生成
-	ID3D11VertexShader *vs_buf = nullptr;  // shaderのbuffer　コンパイルしたシェーダーの格納先 
+	ID3D11VertexShader *vs_buf = nullptr;  // shaderのbuffer　コンパイルしたシェーダーの格納先
 	ID3D11PixelShader  *ps_buf = nullptr;  // shaderのbuffer　コンパイルしたシェーダーの格納先
+	ID3D11VertexShader *vsfinal_buf = nullptr;  // shaderのbuffer　コンパイルしたシェーダーの格納先
+	ID3D11PixelShader  *psfinal_buf = nullptr;  // shaderのbuffer　コンパイルしたシェーダーの格納先
 
 
 	// 
-	ID3D10Blob *vsblob, *psblob; // 任意長のデータを返す際に使用
+	ID3D10Blob *vsblob, *psblob, *vsblobfinal, *psblobfinal; // 任意長のデータを返す際に使用
 	// ファイルを元にエフェクトをコンパイル
-	D3DX11CompileFromFile(TEXT("./Shader/VS.hlsl"), 0, 0, "main", "vs_5_0", 0, 0, 0, &vsblob, 0, 0);
-	D3DX11CompileFromFile(TEXT("./Shader/PS.hlsl"), 0, 0, "main", "ps_5_0", 0, 0, 0, &psblob, 0, 0);
+	D3DX11CompileFromFile(TEXT("./Shader/VSDeferred.hlsl"), 0, 0, "main", "vs_5_0", 0, 0, 0, &vsblob, 0, 0);
+	D3DX11CompileFromFile(TEXT("./Shader/PSDeferred.hlsl"), 0, 0, "main", "ps_5_0", 0, 0, 0, &psblob, 0, 0);
+	D3DX11CompileFromFile(TEXT("./Shader/VSDeferredFinal.hlsl"), 0, 0, "main", "vs_5_0", 0, 0, 0, &vsblobfinal, 0, 0);
+	D3DX11CompileFromFile(TEXT("./Shader/PSDeferredFinal.hlsl"), 0, 0, "main", "ps_5_0", 0, 0, 0, &psblobfinal, 0, 0);
 	// blobを_bufに格納
-	device.getDevice()->CreateVertexShader(vsblob->GetBufferPointer(), vsblob->GetBufferSize(), nullptr ,&vs_buf); // コンパイル済みシェーダーから、頂点シェーダー オブジェクトを作成
+	device.getDevice()->CreateVertexShader(vsblob->GetBufferPointer(), vsblob->GetBufferSize(), nullptr, &vs_buf); // コンパイル済みシェーダーから、頂点シェーダー オブジェクトを作成
 	device.getDevice()->CreatePixelShader(psblob->GetBufferPointer(), psblob->GetBufferSize(), nullptr, &ps_buf);  // ピクセル シェーダーを作成
+	device.getDevice()->CreateVertexShader(vsblobfinal->GetBufferPointer(), vsblobfinal->GetBufferSize(), nullptr, &vsfinal_buf); // コンパイル済みシェーダーから、頂点シェーダー オブジェクトを作成
+	device.getDevice()->CreatePixelShader(psblobfinal->GetBufferPointer(), psblobfinal->GetBufferSize(), nullptr, &psfinal_buf);  // ピクセル シェーダーを作成
 	// Shagerの設定
-	device.getContext()->VSSetShader(vs_buf, nullptr, 0); // 頂点シェーダーをデバイスに設定
-	device.getContext()->PSSetShader(ps_buf, nullptr, 0); // ピクセル シェーダーをデバイスに設定
+	device.getContext()->VSSetShader(vsfinal_buf, nullptr, 0); // 頂点シェーダーをデバイスに設定
+	device.getContext()->PSSetShader(psfinal_buf, nullptr, 0); // ピクセル シェーダーをデバイスに設定
 
 	//　インプットレイアウトを使うために必要なもの 
 	D3D11_INPUT_ELEMENT_DESC element[] = { // 入力アセンブラー ステージの単一の要素( HLSL セマンティクス,要素のセマンティクス インデックス,要素データのデータ型,入力アセンブラーを識別する整数値,各要素間のオフセット (バイト単位),単一の入力スロットの入力データ クラスを識別,インスタンス単位の同じデータを使用して描画するインスタンスの数)
@@ -82,7 +105,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 } // UV情報 
 	};
 	ID3D11InputLayout *inputlayout; // 入力アセンブラー ステージの入力データにアクセス
-	device.getDevice()->CreateInputLayout(element, ARRAYSIZE(element), vsblob->GetBufferPointer(), vsblob->GetBufferSize(), &inputlayout); // 格納(入力アセンブラー ステージで使用される入力バッファー データ)
+	device.getDevice()->CreateInputLayout(element, ARRAYSIZE(element), vsblobfinal->GetBufferPointer(), vsblobfinal->GetBufferSize(), &inputlayout); // 格納(入力アセンブラー ステージで使用される入力バッファー データ)
 	//インプットレイアウトの設定
 	device.getContext()->IASetInputLayout(inputlayout); // 入力アセンブラー ステージに入力レイアウト オブジェクトをバインド
 	// ラスライザの生成
@@ -112,7 +135,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	XMVECTOR hUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	mtx.mView = XMMatrixLookAtLH(hEye, hAt, hUp);
 	mtx.mWorld = XMMatrixIdentity();
-	mtx.mProjection = XMMatrixOrthographicLH(1280, 720, 1, 5000);
+	mtx.mProjection = XMMatrixOrthographicLH((float) window.getWidth(), (float) window.getHeight(), 1, 5000);
 
 	// constantバッファ生成
 	ID3D11Buffer *constantbuffer = nullptr;
@@ -125,10 +148,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	bd.MiscFlags = 0;
 	bd.StructureByteStride = sizeof(float);
 	device.getDevice()->CreateBuffer(&bd, NULL, &constantbuffer); // バッファの生成
-	// Bufferに更新をかける 
-	device.getContext()->UpdateSubresource(constantbuffer, 0, NULL, &mtx, 0, 0); // CPU によって、マッピング不可能なメモリー内に作成されたサブリソースにメモリーからデータがコピーされる
-	// Bufferをパイプラインにセット
-	device.getContext()->VSSetConstantBuffers(0, 1, &constantbuffer); // 頂点シェーダーのパイプライン ステージで使用される定数バッファーを設定
 
 	// テクスチャの読み込み
 	Texture2D tex,tex2;
@@ -140,24 +159,98 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	};
 	device.getContext()->PSSetShaderResources(0, 2, srv); // ピクセル シェーダー ステージにシェーダー リソースの配列をバインド
 
+	//Gバッファの生成
+	Texture2D GBuffer[4];
+	UINT bindflg = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+	GBuffer[0].Create(window.getWidth(), window.getHeight(), D3D11_USAGE_DEFAULT, DXGI_FORMAT_R32G32B32A32_FLOAT, bindflg);	//Albed
+	GBuffer[1].Create(window.getWidth(), window.getHeight(), D3D11_USAGE_DEFAULT, DXGI_FORMAT_R32G32B32A32_FLOAT, bindflg);	//Normal
+	GBuffer[2].Create(window.getWidth(), window.getHeight(), D3D11_USAGE_DEFAULT, DXGI_FORMAT_R32_FLOAT, bindflg);			//Depth
+	GBuffer[3].Create(window.getWidth(), window.getHeight(), D3D11_USAGE_DEFAULT, DXGI_FORMAT_R32G32B32A32_FLOAT, bindflg);	//Diffuse
 
+	ID3D11ShaderResourceView *GBufferSRV [] = {
+		GBuffer[0].getSRV(),
+		GBuffer[1].getSRV(),
+		GBuffer[2].getSRV(),
+		GBuffer[3].getSRV(),
+	};
+	ID3D11RenderTargetView *GBufferRTV [] = {
+		GBuffer[0].getRTV(),
+		GBuffer[1].getRTV(),
+		GBuffer[2].getRTV(),
+		GBuffer[3].getRTV(),
+	};
 	int ret = 0;
 	while (ret != WM_QUIT){
 		ret = window.MessageLoop();
-		float clear[] = { 0.3f, 0.3f, 0.3f, 0.0f };
+		float clear [] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		//バックバッファのクリア
 		device.getContext()->ClearRenderTargetView(device.getRTV(), clear);
 		device.getContext()->ClearDepthStencilView(device.getDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-		// Boxの描画
+		//GBufferのクリア
+		for (auto v : GBufferRTV) {
+			device.getContext()->ClearRenderTargetView(v, clear);
+		}
+		//GUIのクリア
+		ImGui_ImplDX11_NewFrame();
+
+		ImGui::Text("Debug Text");
+
+		//通常描画で使うバッファの更新
+		// Bufferに更新をかける 
+		device.getContext()->UpdateSubresource(constantbuffer, 0, NULL, &mtx, 0, 0); // CPU によって、マッピング不可能なメモリー内に作成されたサブリソースにメモリーからデータがコピーされる
+		// Bufferをパイプラインにセット
+		device.getContext()->VSSetConstantBuffers(0, 1, &constantbuffer); // 頂点シェーダーのパイプライン ステージで使用される定数バッファーを設定
+
+		//通常描画の設定
+		device.getContext()->OMSetRenderTargets(4, GBufferRTV, nullptr);
+		UINT stride = sizeof(Vertex4UV); // 頂点のサイズ
+		UINT offset = 0;			   // ずれの調整
+		device.getContext()->IASetVertexBuffers(0, 1, &vertexbuffer, &stride, &offset);
+		device.getContext()->VSSetShader(vs_buf, nullptr, 0); // 頂点シェーダーをデバイスに設定
+		device.getContext()->PSSetShader(ps_buf, nullptr, 0); // ピクセル シェーダーをデバイスに設定
+
+		device.getContext()->IASetInputLayout(inputlayout);
+
+		//テクスチャの設定
+		ID3D11ShaderResourceView *srv [] = {
+			tex.getSRV(),
+			tex2.getSRV()
+		};
+		device.getContext()->PSSetShaderResources(0, 2, srv); // ピクセル シェーダー ステージにシェーダー リソースの配列をバインド
+		device.getContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		//通常描画
 		device.getContext()->Draw(4, 0);// 頂点数:何番目の頂点からやるか
 
+		//ディファードの最終描画の設定
+		ID3D11RenderTargetView *finalrtv [] = {
+			device.getRTV(),
+		};
+		device.getContext()->OMSetRenderTargets(1, finalrtv, nullptr);
+		device.getContext()->IASetVertexBuffers(0, 1, &finalvertexbuffer, &stride, &offset);
+		device.getContext()->VSSetShader(vsfinal_buf, nullptr, 0); // 頂点シェーダーをデバイスに設定
+		device.getContext()->PSSetShader(psfinal_buf, nullptr, 0); // ピクセル シェーダーをデバイスに設定
 
+		device.getContext()->IASetInputLayout(inputlayout);
+		device.getContext()->PSSetShaderResources(0, 4, GBufferSRV);
+		device.getContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		//ディファードの最終描画
+		device.getContext()->Draw(4, 0);// 頂点数:何番目の頂点からやるか
+
+		//Guiの描画
+		ImGui::Render();
+		//バックバッファとフロントバッファの切り替え
 		device.getSwapChain()->Present(0, 0);
 	}
+	//ImGuiの終了処理
+	ImGui_ImplDX11_Shutdown();
 
 	// マクロリリース
 	SAFE_RELEASE(vertexbuffer);
+	SAFE_RELEASE(finalvertexbuffer);
 	SAFE_RELEASE(vs_buf);
 	SAFE_RELEASE(ps_buf);
+	SAFE_RELEASE(vsfinal_buf);
+	SAFE_RELEASE(psfinal_buf);
 	SAFE_RELEASE(inputlayout);
 	SAFE_RELEASE(rasterizer);
 	SAFE_RELEASE(constantbuffer);

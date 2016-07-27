@@ -1,24 +1,28 @@
 #include <./Device/WindowDevice.h>
+extern LRESULT ImGui_ImplDX11_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //後から修正(各Windowデバイスごとにイベント処理できるように変更)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (ImGui_ImplDX11_WndProcHandler(hWnd, uMsg, wParam, lParam))
+		return true;
+
 	switch (uMsg) {
 	case WM_CREATE:
-		break;
+	break;
 	case WM_CLOSE:
-		break;
+	break;
 	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
+	PostQuitMessage(0);
+	break;
 	case WM_KEYDOWN:
-		switch (wParam) {
-		case VK_ESCAPE:
-			DestroyWindow(hWnd);
-			break;
-		}
-		break;
+	switch (wParam) {
+	case VK_ESCAPE:
+	DestroyWindow(hWnd);
+	break;
+	}
+	break;
 	default:
-		break;
+	break;
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
@@ -36,13 +40,13 @@ unsigned long WindowDevice::Init(HINSTANCE ins, int ncms, std::string title, uns
 	// ウィンドウクラス構造体を設定します。
 	this->wcex.cbSize = sizeof(WNDCLASSEX);
 	this->wcex.style = CS_CLASSDC;
-	this->wcex.lpfnWndProc = (WNDPROC)WndProc;
+	this->wcex.lpfnWndProc = (WNDPROC) WndProc;
 	this->wcex.cbClsExtra = 0;
 	this->wcex.cbWndExtra = 0;
 	this->wcex.hInstance = ins;
 	this->wcex.hIcon = nullptr;
 	this->wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	this->wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	this->wcex.hbrBackground = (HBRUSH) (COLOR_WINDOW + 1);
 	this->wcex.lpszMenuName = nullptr;
 	this->wcex.lpszClassName = classname.c_str();
 	this->wcex.hIconSm = nullptr;
