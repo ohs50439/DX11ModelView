@@ -13,6 +13,8 @@
   <ItemGroup>
     <ClCompile Include="src\Device\DirextXDevice.cpp" />
     <ClCompile Include="src\Device\WindowDevice.cpp" />
+    <ClCompile Include="src\Graphics\GraphicsPipeLine.cpp" />
+    <ClCompile Include="src\Graphics\GraphicStatus.cpp" />
     <ClCompile Include="src\GUI\imgui.cpp" />
     <ClCompile Include="src\GUI\imgui_demo.cpp" />
     <ClCompile Include="src\GUI\imgui_draw.cpp" />
@@ -26,6 +28,8 @@
   <ItemGroup>
     <ClInclude Include="Include\Device\DirectXDevice.h" />
     <ClInclude Include="Include\Device\WindowDevice.h" />
+    <ClInclude Include="include\Graphics\GraphicsPipeLine.h" />
+    <ClInclude Include="include\Graphics\GraphicStatus.h" />
     <ClInclude Include="Include\GUI\imconfig.h" />
     <ClInclude Include="Include\GUI\imgui.h" />
     <ClInclude Include="Include\GUI\imgui_impl_dx11.h" />
