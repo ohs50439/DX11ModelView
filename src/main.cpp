@@ -2,7 +2,6 @@
 
 #include <Windows.h>
 #include <xnamath.h>
-#include <D3DX11.h>
 #include <d3dcompiler.h>
 #include <./Device/WindowDevice.h>
 #include <./Device/DirectXDevice.h>
@@ -11,6 +10,8 @@
 #include <./GUI/imgui.h>
 #include <./GUI/imgui_internal.h>
 #include <./GUI/imgui_impl_dx11.h>
+// 仮
+#include <./Graphics/DX11/Rasterizer.h>
 
 
 // Shaderに送るカメラ情報
@@ -119,7 +120,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	//インプットレイアウトの設定
 	device.getContext()->IASetInputLayout(inputlayout); // 入力アセンブラー ステージに入力レイアウト オブジェクトをバインド
 	// ラスライザの生成
-	ID3D11RasterizerState* rasterizer = nullptr; // ラスタライザー ステートにアクセス
 	D3D11_RASTERIZER_DESC rasterizerDesc = {
 		D3D11_FILL_SOLID, // ワイヤーフレーム (レンダリング時に使用する描画モードを決定)
 		D3D11_CULL_FRONT, // 裏面ポリゴンをカリング(指定の方向を向いている三角形が描画されないことを示す)
@@ -132,8 +132,33 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		FALSE,			  // マルチサンプリングのアンチエイリアシングを有効
 		FALSE			  //　線のアンチエイリアシングを有効
 	};
-	device.getDevice()->CreateRasterizerState(&rasterizerDesc, &rasterizer); // ラスタライザーの生成（ラスタライザー ステージに動作を指示するラスタライザー ステート オブジェクト）
-	device.getContext()->RSSetState(rasterizer); // ラスタライザー設定(パイプラインのラスタライザー ステージのラスタライザー ステートを設定)
+	Rasterizer rast;
+	rast.Create(&rasterizerDesc);
+	rast.SetStatus();
+
+	// サンプラーの生成
+	ID3D11SamplerState *samp;
+	D3D11_SAMPLER_DESC sampDesc;
+	//サンプラーの設定
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.BorderColor[0] = 0.0f; 
+	sampDesc.BorderColor[1] = 0.0f;
+	sampDesc.BorderColor[2] = 0.0f;
+	sampDesc.BorderColor[3] = 0.0f;
+	sampDesc.MipLODBias = 0.0f;
+	sampDesc.MaxAnisotropy = 2;
+	sampDesc.MinLOD = FLT_MAX * -1;
+	sampDesc.MaxLOD = FLT_MAX;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	device.getDevice()->CreateSamplerState(&sampDesc,&samp);
+	device.getContext()->PSSetSamplers(0, 1, &samp);  //  Albed
+	device.getContext()->PSSetSamplers(1, 1, &samp);  //  Normal
+	device.getContext()->PSSetSamplers(2, 1, &samp);  //  Depth
+	device.getContext()->PSSetSamplers(3, 1, &samp);  //  Diffuse
+
 
 	device.getContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP); // 頂点の並び方の設定(プリミティブ タイプおよびデータの順序に関する情報をバインド)
 
@@ -193,16 +218,25 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		GBuffer[3].getRTV(), //  Diffuse
 	};
 	int ret = 0;
+	// クリアの際に使用する
+	ID3D11ShaderResourceView *NULLSRV[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	ID3D11RenderTargetView   *NULLRTV[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
 	while (ret != WM_QUIT){
 		ret = window.MessageLoop();
 		float clear [] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		// パイプラインのクリア
+		device.getContext()->OMSetRenderTargets(8, NULLRTV, nullptr); // レンダーターゲットのクリア
+		device.getContext()->PSSetShaderResources(0,8, NULLSRV);      // シェーダーリソースのクリア
 		//バックバッファのクリア
+		DEBUG(device.getAnotation()->BeginEvent(L"バッファのクリア"));
 		device.getContext()->ClearRenderTargetView(device.getRTV(), clear);
 		device.getContext()->ClearDepthStencilView(device.getDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		//GBufferのクリア
 		for (auto v : GBufferRTV) {
 			device.getContext()->ClearRenderTargetView(v, clear);
 		}
+		DEBUG(device.getAnotation()->EndEvent());
 		//GUIのクリア
 		ImGui_ImplDX11_NewFrame();
 
@@ -235,6 +269,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		device.getContext()->Draw(4, 0);// 頂点数:何番目の頂点からやるか
 
 		//ディファードの最終描画の設定
+		DEBUG(device.getAnotation()->BeginEvent(L"ディファードの最終合成"));
 		ID3D11RenderTargetView *finalrtv [] = {
 			device.getRTV(),
 		};
@@ -248,7 +283,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		device.getContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP); //  // プリミティブ タイプおよびデータの順序に関する情報をバインド
 		//ディファードの最終描画
 		device.getContext()->Draw(4, 0);// 頂点数:何番目の頂点からやるか
-
+		DEBUG(device.getAnotation()->EndEvent());
 		//Guiの描画
 		ImGui::Render();
 		//バックバッファとフロントバッファの切り替え
@@ -265,8 +300,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	SAFE_RELEASE(vsfinal_buf);
 	SAFE_RELEASE(psfinal_buf);
 	SAFE_RELEASE(inputlayout);
-	SAFE_RELEASE(rasterizer);
 	SAFE_RELEASE(constantbuffer);
+	SAFE_RELEASE(samp);
 
 
 	return ret;

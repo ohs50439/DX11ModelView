@@ -37,6 +37,12 @@
     <Filter Include="ヘッダー ファイル\Graphics">
       <UniqueIdentifier>{02bf57e4-dd35-4538-91a2-d1fabe25ba17}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\Graphics\DX11">
+      <UniqueIdentifier>{5f1df3a0-af34-4800-b7c0-2083ef37249f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Graphics\DX11">
+      <UniqueIdentifier>{76486181-ae56-43ac-8725-f06cad7f6258}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Device\DirextXDevice.cpp">
@@ -76,6 +82,12 @@
       <Filter>ソース ファイル\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="src\Graphics\GraphicStatus.cpp">
+      <Filter>ソース ファイル\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graphics\DX11\Rasterizer.cpp">
+      <Filter>ソース ファイル\Graphics\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graphics\GraphicObject.cpp">
       <Filter>ソース ファイル\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
@@ -129,6 +141,12 @@
       <Filter>ヘッダー ファイル\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="include\Graphics\GraphicStatus.h">
+      <Filter>ヘッダー ファイル\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Graphics\DX11\Rasterizer.h">
+      <Filter>ヘッダー ファイル\Graphics\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Graphics\GraphicObject.h">
       <Filter>ヘッダー ファイル\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
