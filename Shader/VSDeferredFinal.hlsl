@@ -1,3 +1,8 @@
+cbuffer ConstantBuffer : register(b0){
+	matrix World;
+	matrix View;
+	matrix Projection;
+};
 // VertexShaderInput(ì¸Åj
 struct VSIN{
 	float4 pos : POSITION;

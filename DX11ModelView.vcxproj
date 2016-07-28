@@ -14,6 +14,7 @@
     <ClCompile Include="src\Device\DirextXDevice.cpp" />
     <ClCompile Include="src\Device\WindowDevice.cpp" />
     <ClCompile Include="src\Graphics\DX11\Rasterizer.cpp" />
+    <ClCompile Include="src\Graphics\DX11\Sampler.cpp" />
     <ClCompile Include="src\Graphics\GraphicObject.cpp" />
     <ClCompile Include="src\Graphics\GraphicsPipeLine.cpp" />
     <ClCompile Include="src\Graphics\GraphicStatus.cpp" />
@@ -30,8 +31,9 @@
   <ItemGroup>
     <ClInclude Include="Include\Device\DirectXDevice.h" />
     <ClInclude Include="Include\Device\WindowDevice.h" />
-    <ClInclude Include="Include\Graphics\DX11\Rasterizer.h" />
-    <ClInclude Include="Include\Graphics\GraphicObject.h" />
+    <ClInclude Include="include\Graphics\DX11\Rasterizer.h" />
+    <ClInclude Include="Include\Graphics\DX11\Sampler.h" />
+    <ClInclude Include="include\Graphics\GraphicObject.h" />
     <ClInclude Include="include\Graphics\GraphicsPipeLine.h" />
     <ClInclude Include="include\Graphics\GraphicStatus.h" />
     <ClInclude Include="Include\GUI\imconfig.h" />
@@ -106,7 +108,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(DXSDK_DIR)\include;%(AdditionalIncludeDirectories);$(ProjectDir)\Include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_Debug;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_Debug;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
