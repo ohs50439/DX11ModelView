@@ -9,9 +9,9 @@ public:
 	GraphicsPipeLine(unsigned long size);
 	~GraphicsPipeLine();
 	void setStatus();
-	virtual bool Draw()						= 0;
-	virtual bool Attach(GraphicStatus* ptr) = 0;
-	virtual bool Remove(GraphicStatus* ptr) = 0;
+	virtual bool Draw();
+	virtual bool Attach(GraphicStatus* ptr);
+	virtual bool Remove(GraphicStatus* ptr);
 	void Release();
 protected:
 
