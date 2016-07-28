@@ -1,4 +1,5 @@
-#pragma warning(disable:4005)
+
+
 #include <Windows.h>
 #include <xnamath.h>
 #include <D3DX11.h>
@@ -11,8 +12,9 @@
 #include <./GUI/imgui_internal.h>
 #include <./GUI/imgui_impl_dx11.h>
 
+
 // Shaderに送るカメラ情報
-struct ConstantBuffer {
+struct ConstantBuffer{
 	XMMATRIX mWorld;		//ワールド変換行列
 	XMMATRIX mView;			//ビュー変換行列
 	XMMATRIX mProjection;	//透視投影変換行列
@@ -30,17 +32,18 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	ImGui_ImplDX11_Init(window.getHandle(), device.getDevice(), device.getContext());
 
 	// 頂点の生成
-	Vertex4UV vertex[4] = { // 1pass 頂点データ
-		{  100.0f,  100.0f, 1.0f,1.0f, 1.0f, 0.0f },
-		{ -100.0f,  100.0f, 1.0f,1.0f, 0.0f, 0.0f },
-		{  100.0f, -100.0f, 1.0f,1.0f, 1.0f, 1.0f },
-		{ -100.0f, -100.0f, 1.0f,1.0f, 0.0f, 1.0f },
+	Vertex4UV vertex[4] = {
+		{  100.f,  100.f, 1.0f, 1.0f, 1.0f, 0.0f },
+		{ -100.f,  100.f, 1.0f, 1.0f, 0.0f, 0.0f },
+		{  100.f, -100.f, 1.0f, 1.0f, 1.0f, 1.0f },
+		{ -100.f, -100.f, 1.0f, 1.0f, 0.0f, 1.0f },
 	};
-	Vertex4UV finalvertex[4] = { // 2pass 頂点データ
-		{  1.0f,  1.0f, 1.0f,1.0f, 1.0f, 0.0f },
-		{ -1.0f,  1.0f, 1.0f,1.0f, 0.0f, 0.0f },
-		{  1.0f, -1.0f, 1.0f,1.0f, 1.0f, 1.0f },
-		{ -1.0f, -1.0f, 1.0f,1.0f, 0.0f, 1.0f },
+    // 最終描画用（final)
+	Vertex4UV finalvertex[4] = {
+		{  1.f,  1.f, 1.0f, 1.0f, 1.0f, 0.0f },
+		{ -1.f,  1.f, 1.0f, 1.0f, 0.0f, 0.0f },
+		{  1.f, -1.f, 1.0f, 1.0f, 1.0f, 1.0f },
+		{ -1.f, -1.f, 1.0f, 1.0f, 0.0f, 1.0f },
 	};
 
 	// VetexBufferの格納先を宣言
@@ -57,6 +60,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	// Bufferの生成
 	device.getDevice()->CreateBuffer(&bd, nullptr, &vertexbuffer);
 
+	//
 	ZeroMemory(&bd, sizeof(bd)); // 中身をゼロクリア
 	// Bufferの生成方法の格納
 	bd.Usage = D3D11_USAGE_DYNAMIC; // バッファーで想定されている読み込みおよび書き込みの方法を識別
@@ -65,6 +69,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // CPUからは書き込みのみ行います
 	// Bufferの生成
 	device.getDevice()->CreateBuffer(&bd, nullptr, &finalvertexbuffer);
+
+	// IMGUIの初期化
+	ImGui_ImplDX11_Init(window.getHandle(), device.getDevice(), device.getContext());
+
+
 
 	//　頂点情報を格納していく
 	D3D11_MAPPED_SUBRESOURCE ms; // Bufferを格納する為にとりあえずロックをかけないといけない。どこまでロックをかける？サブリソース データにアクセスできるようにする
@@ -75,6 +84,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	device.getContext()->Map(finalvertexbuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms); // アクセス先ms
 	memcpy(ms.pData, finalvertex, sizeof(finalvertex));// pData = vetexコピー　書き込み
 	device.getContext()->Unmap(finalvertexbuffer, NULL); // ロック解除
+
 
 	// シェーダーの生成
 	ID3D11VertexShader *vs_buf = nullptr;       // shaderのbuffer　コンパイルしたシェーダーの格納先
@@ -150,7 +160,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	bd.StructureByteStride = sizeof(float);
 	device.getDevice()->CreateBuffer(&bd, NULL, &constantbuffer); // バッファの生成
 
-	// テクスチャの読み込み (テクスチャ作成　MRTに必要な個数)
+	// テクスチャの読み込み
 	Texture2D tex,tex2;
 	tex.LoadFile("./Resource/Lenna.png");
 	tex2.LoadFile("./Resource/lenna_normal.png");
