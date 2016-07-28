@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
 #include <./Graphics/GraphicStatus.h>
+#include <./Graphics/GraphicObject.h>
 
-class GraphicsPipeLine
-{
+class GraphicsPipeLine{
 public:
 	GraphicsPipeLine();
 	GraphicsPipeLine(unsigned long size);
@@ -16,4 +16,5 @@ protected:
 
 private:
 	std::vector<GraphicStatus*> status;
+	GraphicObject *object;
 };

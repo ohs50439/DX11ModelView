@@ -1,7 +1,9 @@
 #ifndef _HEADER_GFW_DIRECTX_
 #define _HEADER_GFW_DIRECTX_
 #pragma warning(push)
-#include <D3DX11.h>
+#pragma warning(disable:4005)
+#include <d3d11_1.h>
+#include <d3dx11.h>
 #include <Macro.h>
 
 class DX11Device {
@@ -38,9 +40,7 @@ private:
 	//COMPTR(ID3D11VideoDevice) video;
 	COMPTR(ID3D11DeviceContext) context;
 	COMPTR(IDXGISwapChain) swapchain;
-#ifdef _Debug
-	COMPTR(ID3DUserDefinedAnnotation) anotation;
-#endif
+	DEBUG(COMPTR(ID3DUserDefinedAnnotation) anotation);
 
 	COMPTR(ID3D11RenderTargetView)		rendertargetview;// レンダーターゲットビュー
 	COMPTR(ID3D11DepthStencilView)		depthstencilview;// ステンシルビュー
