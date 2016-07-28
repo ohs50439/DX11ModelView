@@ -90,6 +90,9 @@
     <ClCompile Include="src\Graphics\GraphicObject.cpp">
       <Filter>ソース ファイル\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="src\Graphics\DX11\Sampler.cpp">
+      <Filter>ソース ファイル\Graphics\DX11</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Input\input.h">
@@ -148,6 +151,9 @@
     </ClInclude>
     <ClInclude Include="include\Graphics\GraphicObject.h">
       <Filter>ヘッダー ファイル\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Graphics\DX11\Sampler.h">
+      <Filter>ヘッダー ファイル\Graphics\DX11</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

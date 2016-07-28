@@ -11,9 +11,11 @@ public:
 	~GraphicsPipeLine();
 
 	void setStatus();
+	void Release();
 	virtual bool Draw();
 	virtual bool Attach(GraphicStatus* ptr);
 	virtual bool Remove(GraphicStatus* ptr);
+
 protected:
 private:
 	std::vector<GraphicStatus*> status;

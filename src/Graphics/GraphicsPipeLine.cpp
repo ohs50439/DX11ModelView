@@ -1,10 +1,12 @@
 #include <./Graphics/GraphicsPipeLine.h>
 
 GraphicsPipeLine::GraphicsPipeLine(){
-	this->status.reserve(8);
+	this->status.reserve(8);  // 動的に増減させる限界容量
+	this->status.resize(8);   // 実際の配列の指定
 }
 GraphicsPipeLine::GraphicsPipeLine(unsigned long size){
 	this->status.reserve(size); // vectorの最大のサイズを変える
+	this->status.resize(size);
 }
 GraphicsPipeLine::~GraphicsPipeLine(){}
 
@@ -43,4 +45,13 @@ bool GraphicsPipeLine::Remove(GraphicStatus* ptr){
 		}
 	}
 	return false;
+}
+
+void GraphicsPipeLine::Release(){
+	for (auto &v : this->status){
+		if (v){
+			v->Release();
+			v = nullptr;
+		}
+	}
 }
