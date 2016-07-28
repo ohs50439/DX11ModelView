@@ -2,7 +2,7 @@
 #include <./Macro.h>
 #include <./Graphics/GraphicStatus.h>
 
-class Rasterizer : GraphicStatus {
+class Rasterizer : public GraphicStatus {
 public:
 	Rasterizer();
 	~Rasterizer();

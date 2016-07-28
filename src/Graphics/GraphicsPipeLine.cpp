@@ -48,3 +48,12 @@ bool GraphicsPipeLine::Remove(GraphicStatus* ptr) {
 	}
 	return false;
 }
+
+void GraphicsPipeLine::Release() {
+	for (auto &v : this->status) {
+		if (v) {
+			v->Release();
+			v = nullptr;
+		}
+	}
+}
