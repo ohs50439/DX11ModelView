@@ -10,6 +10,7 @@
 #include <./GUI/imgui_internal.h>
 #include <./GUI/imgui_impl_dx11.h>
 //仮
+#include <./Graphics/GraphicsPipeLine.h>
 #include <./Graphics/DX11/Rasterizer.h>
 
 // Shaderに送るカメラ情報
@@ -30,6 +31,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	device.Init(window.getHandle(), window.getWidth(), window.getHeight(), window.getWindowMode());
 	ImGui_ImplDX11_Init(window.getHandle(), device.getDevice(), device.getContext());
 
+	GraphicsPipeLine deferred_gpl;
+	
 	// 頂点の生成
 	Vertex4UV vertex[4] = {
 		{  100.0f,  100.0f, 1.0f,1.0f, 1.0f, 0.0f },
@@ -109,8 +112,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	device.getDevice()->CreateInputLayout(element, ARRAYSIZE(element), vsblobfinal->GetBufferPointer(), vsblobfinal->GetBufferSize(), &inputlayout); // 格納(入力アセンブラー ステージで使用される入力バッファー データ)
 	//インプットレイアウトの設定
 	device.getContext()->IASetInputLayout(inputlayout); // 入力アセンブラー ステージに入力レイアウト オブジェクトをバインド
+
 	// ラスライザの生成
-	ID3D11RasterizerState* rasterizer = nullptr; // ラスタライザー ステートにアクセス
 	D3D11_RASTERIZER_DESC rasterizerDesc = {
 		D3D11_FILL_SOLID, // ワイヤーフレーム (レンダリング時に使用する描画モードを決定)
 		D3D11_CULL_FRONT, // 裏面ポリゴンをカリング(指定の方向を向いている三角形が描画されないことを示す)
@@ -126,6 +129,32 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	Rasterizer rast;
 	rast.Create(&rasterizerDesc);
 	rast.SetStatus();
+
+	//ラスタライザの追加
+	deferred_gpl.Attach(&rast);
+
+	//サンプラーの作成
+	ID3D11SamplerState *samp;
+    D3D11_SAMPLER_DESC sampDesc;
+    sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.BorderColor[0] = 0.0f;
+    sampDesc.BorderColor[1] = 0.0f;
+    sampDesc.BorderColor[2] = 0.0f;
+    sampDesc.BorderColor[3] = 0.0f;
+    sampDesc.MipLODBias = 0.0f;
+    sampDesc.MaxAnisotropy = 2;
+    sampDesc.MinLOD = FLT_MAX * ( -1 );
+    sampDesc.MaxLOD = FLT_MAX;
+    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    device.getDevice()->CreateSamplerState( &sampDesc, &samp);
+	//サンプラーのセット
+	device.getContext()->PSSetSamplers( 0, 1, &samp );
+	device.getContext()->PSSetSamplers( 1, 1, &samp );
+	device.getContext()->PSSetSamplers( 2, 1, &samp );
+	device.getContext()->PSSetSamplers( 3, 1, &samp );
 
 	device.getContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP); // 頂点の並び方の設定(プリミティブ タイプおよびデータの順序に関する情報をバインド)
 
@@ -181,10 +210,16 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		GBuffer[2].getRTV(),
 		GBuffer[3].getRTV(),
 	};
+	ID3D11ShaderResourceView *NullSRV [] = {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr};
+	ID3D11RenderTargetView *NullRTV [] = {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr};
 	int ret = 0;
 	while (ret != WM_QUIT){
 		ret = window.MessageLoop();
 		float clear [] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		//レンダーターゲットのリセット
+		device.getContext()->OMSetRenderTargets(8, NullRTV, nullptr);
+		device.getContext()->PSSetShaderResources(0, 8, NullSRV); // ピクセル シェーダー ステージにシェーダー リソースの配列をバインド
+		//
 		//バックバッファのクリア
 		DEBUG(device.getAnotation()->BeginEvent(L"バックバッファ GBufferのクリア"));
 		device.getContext()->ClearRenderTargetView(device.getRTV(), clear);
@@ -251,6 +286,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	ImGui_ImplDX11_Shutdown();
 
 	// マクロリリース
+	deferred_gpl.Release();
+	SAFE_RELEASE(samp);
 	SAFE_RELEASE(vertexbuffer);
 	SAFE_RELEASE(finalvertexbuffer);
 	SAFE_RELEASE(vs_buf);
@@ -258,7 +295,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	SAFE_RELEASE(vsfinal_buf);
 	SAFE_RELEASE(psfinal_buf);
 	SAFE_RELEASE(inputlayout);
-	SAFE_RELEASE(rasterizer);
 	SAFE_RELEASE(constantbuffer);
 
 
