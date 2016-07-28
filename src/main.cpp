@@ -186,12 +186,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		ret = window.MessageLoop();
 		float clear [] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		//バックバッファのクリア
+		DEBUG(device.getAnotation()->BeginEvent(L"バックバッファ GBufferのクリア"));
 		device.getContext()->ClearRenderTargetView(device.getRTV(), clear);
 		device.getContext()->ClearDepthStencilView(device.getDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		//GBufferのクリア
 		for (auto v : GBufferRTV) {
 			device.getContext()->ClearRenderTargetView(v, clear);
 		}
+		DEBUG(device.getAnotation()->EndEvent());
 		//GUIのクリア
 		ImGui_ImplDX11_NewFrame();
 
@@ -224,6 +226,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		device.getContext()->Draw(4, 0);// 頂点数:何番目の頂点からやるか
 
 		//ディファードの最終描画の設定
+		DEBUG(device.getAnotation()->BeginEvent(L"ディファードレンダリング"));
 		ID3D11RenderTargetView *finalrtv [] = {
 			device.getRTV(),
 		};
@@ -240,6 +243,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 		//Guiの描画
 		ImGui::Render();
+		DEBUG(device.getAnotation()->EndEvent());
 		//バックバッファとフロントバッファの切り替え
 		device.getSwapChain()->Present(0, 0);
 	}
