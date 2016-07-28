@@ -22,157 +22,115 @@ struct ConstantBuffer{
 	XMMATRIX mView;			//ビュー変換行列
 	XMMATRIX mProjection;	//透視投影変換行列
 };
+ 
+void CrateDeferredPipeLine(GraphicsPipeLine &pipe); // プロトタイプ宣言
 
 int APIENTRY WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine,
 	int nCmdShow) {
 
+	//DX初期化にはデバイス、コンテキスト、スワップチェインの3つ、加えてレンダリングターゲット
 	WindowDevice &window = WindowDevice::getInstance();
 	DX11Device &device = DX11Device::getInstance();
 	window.Init(hInstance, nCmdShow, TEXT("test window"), 1280, 720, true);
 	device.Init(window.getHandle(), window.getWidth(), window.getHeight(), window.getWindowMode());
+	// IMGUIの初期化
 	ImGui_ImplDX11_Init(window.getHandle(), device.getDevice(), device.getContext());
 
 	GraphicsPipeLine deferredGPL;
-
-	// 頂点の生成
+	//=====================================================//
+	//     頂点データ情報（FarstPass & FinalPass)  1.CreateBufferで生成 2.IASetVertexBuffersで設定 3.Drawで実行(描画)
+	//=====================================================//
+	//***************宣言********************//
+	ID3D11Buffer *vertexbuffer = nullptr;		 // FirstPassBuffer
+	ID3D11Buffer *finalvertexbuffer = nullptr;   // FinalPassBuffer
+	D3D11_BUFFER_DESC bd;						 // 生成方法(バッファー リソース)
+	//***************頂点生成********************//
+	// 最初描画用　  (FarstPass)
 	Vertex4UV vertex[4] = {
 		{  100.f,  100.f, 1.0f, 1.0f, 1.0f, 0.0f },
 		{ -100.f,  100.f, 1.0f, 1.0f, 0.0f, 0.0f },
 		{  100.f, -100.f, 1.0f, 1.0f, 1.0f, 1.0f },
 		{ -100.f, -100.f, 1.0f, 1.0f, 0.0f, 1.0f },
 	};
-    // 最終描画用（final)
+    // 最終描画用　　（FinalPass)
 	Vertex4UV finalvertex[4] = {
 		{  1.f,  1.f, 1.0f, 1.0f, 1.0f, 0.0f },
 		{ -1.f,  1.f, 1.0f, 1.0f, 0.0f, 0.0f },
 		{  1.f, -1.f, 1.0f, 1.0f, 1.0f, 1.0f },
 		{ -1.f, -1.f, 1.0f, 1.0f, 0.0f, 1.0f },
 	};
-
-	// VetexBufferの格納先を宣言
-	ID3D11Buffer *vertexbuffer = nullptr;
-	ID3D11Buffer *finalvertexbuffer = nullptr;
-
-	D3D11_BUFFER_DESC bd; // 生成方法(バッファー リソース)
+	//***************頂点バッファ設定********************//(BufferDESCに生成方法を格納＆CreateBufferで生成まで)
+	// FirstPass設定
 	ZeroMemory(&bd, sizeof(bd)); // 中身をゼロクリア
-	// Bufferの生成方法の格納
 	bd.Usage = D3D11_USAGE_DYNAMIC; // バッファーで想定されている読み込みおよび書き込みの方法を識別
 	bd.ByteWidth = sizeof(vertex);  // バッファーのサイズ(バイト単位)
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // なんのバッファですか？
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // CPUからは書き込みのみ行います
-	// Bufferの生成
-	device.getDevice()->CreateBuffer(&bd, nullptr, &vertexbuffer);
-
-	//
+	device.getDevice()->CreateBuffer(&bd, nullptr, &vertexbuffer); // 設定したBufferを生成
+	// FinalPass設定
 	ZeroMemory(&bd, sizeof(bd)); // 中身をゼロクリア
-	// Bufferの生成方法の格納
 	bd.Usage = D3D11_USAGE_DYNAMIC; // バッファーで想定されている読み込みおよび書き込みの方法を識別
 	bd.ByteWidth = sizeof(finalvertex);  // バッファーのサイズ(バイト単位)
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // なんのバッファですか？
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // CPUからは書き込みのみ行います
-	// Bufferの生成
-	device.getDevice()->CreateBuffer(&bd, nullptr, &finalvertexbuffer);
-
-	// IMGUIの初期化
-	ImGui_ImplDX11_Init(window.getHandle(), device.getDevice(), device.getContext());
-
-
-
-	//　頂点情報を格納していく
+	device.getDevice()->CreateBuffer(&bd, nullptr, &finalvertexbuffer); // 設定したBufferを生成
+	//***************頂点情報を格納していく********************//(BufferDESCに生成方法を格納＆CreateBufferで生成まで)
+	// FirstPass格納
 	D3D11_MAPPED_SUBRESOURCE ms; // Bufferを格納する為にとりあえずロックをかけないといけない。どこまでロックをかける？サブリソース データにアクセスできるようにする
 	device.getContext()->Map(vertexbuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms); // アクセス先ms
 	memcpy(ms.pData, vertex, sizeof(vertex));// pData = vetexコピー　書き込み
 	device.getContext()->Unmap(vertexbuffer, NULL); // ロック解除
-
+	// FinalPass格納
 	device.getContext()->Map(finalvertexbuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms); // アクセス先ms
 	memcpy(ms.pData, finalvertex, sizeof(finalvertex));// pData = vetexコピー　書き込み
 	device.getContext()->Unmap(finalvertexbuffer, NULL); // ロック解除
 
-
-	// シェーダーの生成
-	ID3D11VertexShader *vs_buf = nullptr;       // shaderのbuffer　コンパイルしたシェーダーの格納先
-	ID3D11PixelShader  *ps_buf = nullptr;       // shaderのbuffer　コンパイルしたシェーダーの格納先
-	ID3D11VertexShader *vsfinal_buf = nullptr;  // shaderのbuffer　コンパイルしたシェーダーの格納先
-	ID3D11PixelShader  *psfinal_buf = nullptr;  // shaderのbuffer　コンパイルしたシェーダーの格納先
-
-
-	// 
+	//=====================================================//
+	//       シェーダー情報（VertexShader&PixelShader)   1.Create(Vertex & Pixel)Shaderで生成  2.(VS & PS)SetShaderで実行
+	//=====================================================//
+	//***************宣言********************//
+	ID3D11VertexShader *vs_buf = nullptr;       // (first) shaderのbuffer　コンパイルしたシェーダーの格納先
+	ID3D11PixelShader  *ps_buf = nullptr;       // (first) shaderのbuffer　コンパイルしたシェーダーの格納先
+	ID3D11VertexShader *vsfinal_buf = nullptr;  // (final) shaderのbuffer　コンパイルしたシェーダーの格納先
+	ID3D11PixelShader  *psfinal_buf = nullptr;  // (final) shaderのbuffer　コンパイルしたシェーダーの格納先
 	ID3D10Blob *vsblob, *psblob, *vsblobfinal, *psblobfinal; // 任意長のデータを返す際に使用
-	// ファイルを元にエフェクトをコンパイル
+	//***************シェーダーコード格納ファイルコンパイル********************//
 	D3DX11CompileFromFile(TEXT("./Shader/VSDeferred.hlsl"), 0, 0, "main", "vs_5_0", 0, 0, 0, &vsblob, 0, 0);
 	D3DX11CompileFromFile(TEXT("./Shader/PSDeferred.hlsl"), 0, 0, "main", "ps_5_0", 0, 0, 0, &psblob, 0, 0);
 	D3DX11CompileFromFile(TEXT("./Shader/VSDeferredFinal.hlsl"), 0, 0, "main", "vs_5_0", 0, 0, 0, &vsblobfinal, 0, 0);
 	D3DX11CompileFromFile(TEXT("./Shader/PSDeferredFinal.hlsl"), 0, 0, "main", "ps_5_0", 0, 0, 0, &psblobfinal, 0, 0);
-	// blobを_bufに格納
+	//***************シェーダーの設定(VS&PS)**********************************//
 	device.getDevice()->CreateVertexShader(vsblob->GetBufferPointer(), vsblob->GetBufferSize(), nullptr, &vs_buf); // コンパイル済みシェーダーから、頂点シェーダー オブジェクトを作成
 	device.getDevice()->CreatePixelShader(psblob->GetBufferPointer(), psblob->GetBufferSize(), nullptr, &ps_buf);  // ピクセル シェーダーを作成
 	device.getDevice()->CreateVertexShader(vsblobfinal->GetBufferPointer(), vsblobfinal->GetBufferSize(), nullptr, &vsfinal_buf); // コンパイル済みシェーダーから、頂点シェーダー オブジェクトを作成
 	device.getDevice()->CreatePixelShader(psblobfinal->GetBufferPointer(), psblobfinal->GetBufferSize(), nullptr, &psfinal_buf);  // ピクセル シェーダーを作成
-	// Shagerの設定
+	// 頂点シェーダーをデバイスに設定（実行）
 	device.getContext()->VSSetShader(vsfinal_buf, nullptr, 0); // 頂点シェーダーをデバイスに設定
 	device.getContext()->PSSetShader(psfinal_buf, nullptr, 0); // ピクセル シェーダーをデバイスに設定
 
-	//　インプットレイアウトを使うために必要なもの 
+	//=====================================================//
+	///            頂点レイアウト情報
+	//=====================================================//
+	//　入力レイアウト(レイアウト情報をコンパイル済みVertexShaderから動的に構築)
 	D3D11_INPUT_ELEMENT_DESC element[] = { // 入力アセンブラー ステージの単一の要素( HLSL セマンティクス,要素のセマンティクス インデックス,要素データのデータ型,入力アセンブラーを識別する整数値,各要素間のオフセット (バイト単位),単一の入力スロットの入力データ クラスを識別,インスタンス単位の同じデータを使用して描画するインスタンスの数)
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },// 位置情報
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 } // UV情報 
 	};
 	ID3D11InputLayout *inputlayout; // 入力アセンブラー ステージの入力データにアクセス
 	device.getDevice()->CreateInputLayout(element, ARRAYSIZE(element), vsblobfinal->GetBufferPointer(), vsblobfinal->GetBufferSize(), &inputlayout); // 格納(入力アセンブラー ステージで使用される入力バッファー データ)
-	//インプットレイアウトの設定
-	device.getContext()->IASetInputLayout(inputlayout); // 入力アセンブラー ステージに入力レイアウト オブジェクトをバインド
-	// ラスライザの設定
-	D3D11_RASTERIZER_DESC rasterizerDesc = {
-		D3D11_FILL_SOLID, // ワイヤーフレーム (レンダリング時に使用する描画モードを決定)
-		D3D11_CULL_FRONT, // 裏面ポリゴンをカリング(指定の方向を向いている三角形が描画されないことを示す)
-		FALSE,			  // 三角形が前向きか後ろ向きかを決定する
-		0,				  // 指定のピクセルに加算する深度値
-		0.0f,             // ピクセルの最大深度バイアス
-		FALSE,			  // 指定のピクセルのスロープに対するスカラ
-		FALSE,			  // 距離に基づいてクリッピングを有効
-		FALSE,            // シザー矩形カリングを有効
-		FALSE,			  // マルチサンプリングのアンチエイリアシングを有効
-		FALSE			  //　線のアンチエイリアシングを有効
-	};
-	Rasterizer rast;
-	// ラスタライザの生成
-	rast.Create(&rasterizerDesc); 
-	// パイプラインにラスタライザを追加
-	deferredGPL.Attach(&rast);
-
-	// サンプラーの生成
-	D3D11_SAMPLER_DESC sampDesc;
-	//サンプラーの設定
-	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.BorderColor[0] = 0.0f; 
-	sampDesc.BorderColor[1] = 0.0f;
-	sampDesc.BorderColor[2] = 0.0f;
-	sampDesc.BorderColor[3] = 0.0f;
-	sampDesc.MipLODBias = 0.0f;
-	sampDesc.MaxAnisotropy = 2;
-	sampDesc.MinLOD = FLT_MAX * -1;
-	sampDesc.MaxLOD = FLT_MAX;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	Sampler samp;
-	samp.Create(0, &sampDesc);
-	samp.Attach(1, &samp, 0);
-	samp.Attach(2, &samp, 0);
-	samp.Attach(3, &samp, 0);
-	samp.SetStatus();
-
-	// パイプラインにサンプラーを追加
-	deferredGPL.Attach(&samp);
-
+	device.getContext()->IASetInputLayout(inputlayout); //インプットレイアウトの設定 入力アセンブラー ステージに入力レイアウト オブジェクトをバインド
 	device.getContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP); // 頂点の並び方の設定(プリミティブ タイプおよびデータの順序に関する情報をバインド)
+	
 
-	// Shaderに送る行列の生成
-	ConstantBuffer mtx;
+	// 通常描画用のパイプライン
+	CrateDeferredPipeLine(deferredGPL);
 
+	//=====================================================//
+	//            カメラ情報
+	//=====================================================//
+	ConstantBuffer mtx; // Shaderに送る行列の生成
 	XMVECTOR hEye = XMVectorSet(0.0f, 0.0f, -2.0f, 0.0f);
 	XMVECTOR hAt = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	XMVECTOR hUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
@@ -180,6 +138,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	mtx.mWorld = XMMatrixIdentity();
 	mtx.mProjection = XMMatrixOrthographicLH((float) window.getWidth(), (float) window.getHeight(), 1, 5000);
 
+	//=====================================================//
+	//            コンスタント情報
+	//=====================================================//
 	//コンテキストバッファ：シェーダーで宣言した定数をプログラム側から変更する(主に生成、更新、シェーダーステージへのセットという３つのアクション)
 	// constantバッファ生成
 	ID3D11Buffer *constantbuffer = nullptr;
@@ -193,6 +154,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	bd.StructureByteStride = sizeof(float);
 	device.getDevice()->CreateBuffer(&bd, NULL, &constantbuffer); // バッファの生成
 
+	//=====================================================//
+	//           バッファ情報
+	//=====================================================//
 	// テクスチャの読み込み
 	Texture2D tex,tex2;
 	tex.LoadFile("./Resource/Lenna.png");
@@ -231,7 +195,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	// パイプラインの構築
 	deferredGPL.setStatus();
 
-
+	//=====================================================//
+	//           ループ処理
+	//=====================================================//
 	int ret = 0;
 	while (ret != WM_QUIT){
 		ret = window.MessageLoop();
@@ -300,9 +266,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		//バックバッファとフロントバッファの切り替え
 		device.getSwapChain()->Present(0, 0);
 	}
+	//=====================================================//
+	//         　　　解放処理
+	//=====================================================//
 	//ImGuiの終了処理
 	ImGui_ImplDX11_Shutdown();
-
 	// マクロリリース
 	SAFE_RELEASE(vertexbuffer);
 	SAFE_RELEASE(finalvertexbuffer);
@@ -314,6 +282,54 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	SAFE_RELEASE(constantbuffer);
 	deferredGPL.Release();
 
-
 	return ret;
+}
+
+void CrateDeferredPipeLine(GraphicsPipeLine &GPL){
+	//=====================================================//
+	//         　　　ラスライザ情報
+	//=====================================================//
+	D3D11_RASTERIZER_DESC rasterizerDesc = {
+		D3D11_FILL_SOLID, // ワイヤーフレーム (レンダリング時に使用する描画モードを決定)
+		D3D11_CULL_FRONT, // 裏面ポリゴンをカリング(指定の方向を向いている三角形が描画されないことを示す)
+		FALSE,			  // 三角形が前向きか後ろ向きかを決定する
+		0,				  // 指定のピクセルに加算する深度値
+		0.0f,             // ピクセルの最大深度バイアス
+		FALSE,			  // 指定のピクセルのスロープに対するスカラ
+		FALSE,			  // 距離に基づいてクリッピングを有効
+		FALSE,            // シザー矩形カリングを有効
+		FALSE,			  // マルチサンプリングのアンチエイリアシングを有効
+		FALSE			  //　線のアンチエイリアシングを有効
+	};
+	Rasterizer *rast = new Rasterizer();// ラスタライザの生成
+	rast->Create(&rasterizerDesc);
+
+	GPL.Attach(rast); // パイプラインにラスタライザを追加
+	//=====================================================//
+	//         　　　サンプラー情報
+	//=====================================================//
+	// サンプラーの生成
+	D3D11_SAMPLER_DESC sampDesc;
+	//サンプラーの設定
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.BorderColor[0] = 0.0f;
+	sampDesc.BorderColor[1] = 0.0f;
+	sampDesc.BorderColor[2] = 0.0f;
+	sampDesc.BorderColor[3] = 0.0f;
+	sampDesc.MipLODBias = 0.0f;
+	sampDesc.MaxAnisotropy = 2;
+	sampDesc.MinLOD = FLT_MAX * -1;
+	sampDesc.MaxLOD = FLT_MAX;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	Sampler *samp = new Sampler();
+	samp->Create(0, &sampDesc);
+	samp->Attach(1, samp, 0);
+	samp->Attach(2, samp, 0);
+	samp->Attach(3, samp, 0);
+
+	GPL.Attach(samp); // パイプラインにサンプラーを追加
+
 }
