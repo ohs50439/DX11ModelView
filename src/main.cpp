@@ -1,7 +1,6 @@
 #pragma warning(disable:4005)
 #include <Windows.h>
 #include <xnamath.h>
-#include <D3DX11.h>
 #include <d3dcompiler.h>
 #include <./Device/WindowDevice.h>
 #include <./Device/DirectXDevice.h>
@@ -10,6 +9,8 @@
 #include <./GUI/imgui.h>
 #include <./GUI/imgui_internal.h>
 #include <./GUI/imgui_impl_dx11.h>
+//仮
+#include <./Graphics/DX11/Rasterizer.h>
 
 // Shaderに送るカメラ情報
 struct ConstantBuffer {
@@ -122,8 +123,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		FALSE,			  // マルチサンプリングのアンチエイリアシングを有効
 		FALSE			  //　線のアンチエイリアシングを有効
 	};
-	device.getDevice()->CreateRasterizerState(&rasterizerDesc, &rasterizer); // ラスタライザーの生成（ラスタライザー ステージに動作を指示するラスタライザー ステート オブジェクト）
-	device.getContext()->RSSetState(rasterizer); // ラスタライザー設定(パイプラインのラスタライザー ステージのラスタライザー ステートを設定)
+	Rasterizer rast;
+	rast.Create(&rasterizerDesc);
+	rast.SetStatus();
 
 	device.getContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP); // 頂点の並び方の設定(プリミティブ タイプおよびデータの順序に関する情報をバインド)
 
